@@ -90,6 +90,62 @@ def test_main_respects_custom_tag(monkeypatch: pytest.MonkeyPatch, minimal_build
     assert "my-local:test" in args
 
 
+def test_main_infers_digest_when_unambiguous(
+    monkeypatch: pytest.MonkeyPatch, minimal_builds: dict
+) -> None:
+    # minimal_builds declares 26.0.0 with a single 1.94.0-slim-trixie pin, so the
+    # digest can be resolved without --rust-image-digest.
+    monkeypatch.setattr(build_image.builds, "load", lambda: minimal_builds)
+    monkeypatch.setattr(build_image.common, "preflight_checks", lambda _: None)
+    captured = MagicMock(return_value=_completed())
+    monkeypatch.setattr(build_image.runner, "run", captured)
+
+    rc = build_image.main(
+        [
+            "--stellar-cli-version",
+            "26.0.0",
+            "--rust-version",
+            "1.94.0-slim-trixie",
+        ]
+    )
+
+    assert rc == 0
+    args = captured.call_args[0][0]
+    assert f"RUST_IMAGE_DIGEST={DIGEST}" in args
+
+
+def test_main_dies_when_digest_omitted_and_ambiguous(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Two digests share the 1.94.0-slim-trixie label → the digest must be given.
+    ambiguous = {
+        "default_distro": "trixie",
+        "stellar_cli_versions": [
+            {
+                "ref": "a" * 40,
+                "version": "26.0.0",
+                "rust_versions": [
+                    "1.94.0-slim-trixie@sha256:" + "a" * 64,
+                    "1.94.0-slim-trixie@sha256:" + "b" * 64,
+                ],
+            }
+        ],
+    }
+    monkeypatch.setattr(build_image.builds, "load", lambda: ambiguous)
+    monkeypatch.setattr(build_image.common, "preflight_checks", lambda _: None)
+    monkeypatch.setattr(build_image.runner, "run", lambda *_, **__: _completed())
+
+    with pytest.raises(SystemExit):
+        build_image.main(
+            [
+                "--stellar-cli-version",
+                "26.0.0",
+                "--rust-version",
+                "1.94.0-slim-trixie",
+            ]
+        )
+
+
 def test_main_dies_for_undeclared_pair(
     monkeypatch: pytest.MonkeyPatch, minimal_builds: dict
 ) -> None:

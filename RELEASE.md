@@ -102,11 +102,11 @@ The script prints the chosen release tag as its final stdout line. Commit and pu
 
 ```sh
 ./scripts/validate_json.py
-# --rust-version is the label; --rust-image-digest is the pin's digest from
-# builds.json (it pins the FROM and is cross-checked against the image's
+# --rust-version is the label; build_image.py resolves its pinned digest from
+# builds.json (the digest pins the FROM and is cross-checked against the image's
 # org.opencontainers.image.base.digest label). The built tag is label-only.
-./scripts/build_image.py --stellar-cli-version 26.1.0 --rust-version 1.95.0-slim-trixie \
-  --rust-image-digest sha256:e14e87345b4d5964ddcc3491d27ee046a0f23820f340c3c1e24da6880141f7c0
+# Pass --rust-image-digest only when one label carries multiple digests.
+./scripts/build_image.py --stellar-cli-version 26.1.0 --rust-version 1.95.0-slim-trixie
 ./scripts/smoke_test_image.py --image stellar-cli:26.1.0-rust1.95.0-slim-trixie \
   --stellar-cli-version 26.1.0 --rust-version 1.95.0-slim-trixie \
   --rust-image-digest sha256:e14e87345b4d5964ddcc3491d27ee046a0f23820f340c3c1e24da6880141f7c0

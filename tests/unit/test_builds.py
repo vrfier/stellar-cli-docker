@@ -103,6 +103,49 @@ def test_assert_pair_declared_rejects_undeclared_pair(multi_cli_builds: dict) ->
         builds.assert_pair_declared(multi_cli_builds, "25.1.0", _PIN_94)
 
 
+def test_resolve_rust_digest_returns_sole_digest(minimal_builds: dict) -> None:
+    # One pin for the label → digest is unambiguous, no explicit digest needed.
+    assert builds.resolve_rust_digest(minimal_builds, "26.0.0", "1.94.0-slim-trixie") == _DIGEST_94
+
+
+def test_resolve_rust_digest_honors_explicit_digest(multi_cli_builds: dict) -> None:
+    assert (
+        builds.resolve_rust_digest(multi_cli_builds, "26.0.0", "1.94.0-slim-trixie", _DIGEST_94)
+        == _DIGEST_94
+    )
+
+
+def test_resolve_rust_digest_rejects_explicit_undeclared_pin(multi_cli_builds: dict) -> None:
+    with pytest.raises(ValueError, match="not declared"):
+        builds.resolve_rust_digest(
+            multi_cli_builds, "26.0.0", "1.94.0-slim-trixie", "sha256:" + "0" * 64
+        )
+
+
+def test_resolve_rust_digest_rejects_undeclared_label(minimal_builds: dict) -> None:
+    with pytest.raises(ValueError, match="not declared"):
+        builds.resolve_rust_digest(minimal_builds, "26.0.0", "1.99.0-slim-trixie")
+
+
+def test_resolve_rust_digest_requires_digest_when_ambiguous() -> None:
+    # Same label carrying two digests → caller must disambiguate.
+    data = {
+        "default_distro": "trixie",
+        "stellar_cli_versions": [
+            {
+                "ref": "a" * 40,
+                "version": "26.0.0",
+                "rust_versions": [
+                    "1.94.0-slim-trixie@sha256:" + "a" * 64,
+                    "1.94.0-slim-trixie@sha256:" + "b" * 64,
+                ],
+            }
+        ],
+    }
+    with pytest.raises(ValueError, match="multiple digests"):
+        builds.resolve_rust_digest(data, "26.0.0", "1.94.0-slim-trixie")
+
+
 def test_derive_default_rust_picks_highest_matching_suffix(multi_cli_builds: dict) -> None:
     assert builds.derive_default_rust(multi_cli_builds, "26.0.0") == _PIN_94
 

@@ -17,7 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--stellar-cli-version", required=True, metavar="V")
     parser.add_argument("--rust-version", required=True, metavar="KEY")
-    parser.add_argument("--rust-image-digest", required=True, metavar="DIGEST")
+    parser.add_argument("--rust-image-digest", default=None, metavar="DIGEST")
     parser.add_argument("--platform", default="", metavar="P")
     parser.add_argument("--tag", default="", metavar="REF")
     parser.add_argument("--source-repo", default="stellar/stellar-cli-docker", metavar="SLUG")
@@ -29,10 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     common.preflight_checks(["buildx"])
 
     data = builds.load()
-    rust_digest = args.rust_image_digest
     try:
-        builds.assert_pair_declared(
-            data, args.stellar_cli_version, f"{args.rust_version}@{rust_digest}"
+        rust_digest = builds.resolve_rust_digest(
+            data, args.stellar_cli_version, args.rust_version, args.rust_image_digest
         )
         stellar_ref = builds.stellar_cli_ref(data, args.stellar_cli_version)
         parsed = rust_keys.parse(args.rust_version)

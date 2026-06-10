@@ -81,6 +81,35 @@ def assert_pair_declared(data: dict[str, Any], cli: str, rust_pin: str) -> None:
         )
 
 
+def resolve_rust_digest(
+    data: dict[str, Any], cli: str, label: str, digest: str | None = None
+) -> str:
+    """Resolve the pinned base digest for a (cli, rust label) pair.
+
+    When `digest` is given, assert the exact `<label>@<digest>` pin is declared
+    and return it. When `digest` is omitted, return the sole digest declared for
+    the label; raise if the label is undeclared, or if it carries more than one
+    digest (the caller must then disambiguate with an explicit digest).
+    """
+    if digest:
+        assert_pair_declared(data, cli, f"{label}@{digest}")
+        return digest
+
+    entry = find_cli(data, cli)
+    pins = [pin for pin in (entry or {}).get("rust_versions", []) if label_of(pin) == label]
+    if not pins:
+        raise ValueError(
+            f"stellar-cli {cli} is not declared with rust base {label} in builds.json"
+        )
+    if len(pins) > 1:
+        choices = ", ".join(digest_of(pin) for pin in pins)
+        raise ValueError(
+            f"stellar-cli {cli} declares multiple digests for rust base {label}; "
+            f"pass --rust-image-digest to select one of: {choices}"
+        )
+    return digest_of(pins[0])
+
+
 def derive_default_rust(data: dict[str, Any], cli: str) -> str:
     distro = data.get("default_distro")
     if not distro:

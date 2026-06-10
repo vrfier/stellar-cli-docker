@@ -102,10 +102,12 @@ compare the resulting WASM sha256.
 ./scripts/validate_json.py
 
 # Build a local image for a declared (cli, rust base) pair. The rust base is
-# given as the label plus its pinned digest (copy the pin from builds.json).
+# given as the label; the digest is resolved from builds.json automatically.
 ./scripts/build_image.py --stellar-cli-version 26.0.0 \
-  --rust-version 1.94.0-slim-trixie \
-  --rust-image-digest sha256:f7bf1c266d9e48c8d724733fd97ba60464c44b743eb4f46f935577d3242d81d0
+  --rust-version 1.94.0-slim-trixie
+
+# Only when a label carries more than one digest in builds.json do you need
+# --rust-image-digest to say which pin to build.
 
 # Smoke-test the built image.
 docker run --rm stellar-cli:26.0.0-rust1.94.0-slim-trixie --version
