@@ -91,16 +91,16 @@ def resolve_rust_digest(
     the label; raise if the label is undeclared, or if it carries more than one
     digest (the caller must then disambiguate with an explicit digest).
     """
-    if digest:
+    if digest is not None:
         assert_pair_declared(data, cli, f"{label}@{digest}")
         return digest
 
     entry = find_cli(data, cli)
-    pins = [pin for pin in (entry or {}).get("rust_versions", []) if label_of(pin) == label]
+    if entry is None:
+        raise ValueError(f"unknown stellar-cli version: {cli}")
+    pins = [pin for pin in entry.get("rust_versions", []) if label_of(pin) == label]
     if not pins:
-        raise ValueError(
-            f"stellar-cli {cli} is not declared with rust base {label} in builds.json"
-        )
+        raise ValueError(f"stellar-cli {cli} is not declared with rust base {label} in builds.json")
     if len(pins) > 1:
         choices = ", ".join(digest_of(pin) for pin in pins)
         raise ValueError(

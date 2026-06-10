@@ -109,9 +109,12 @@ def test_main_infers_digest_when_unambiguous(
         ]
     )
 
+    # Expect the sole digest the fixture declares for this (cli, label), so the
+    # assertion can't drift from the digest build_image actually infers.
+    expected_digest = minimal_builds["stellar_cli_versions"][0]["rust_versions"][0].split("@", 1)[1]
     assert rc == 0
     args = captured.call_args[0][0]
-    assert f"RUST_IMAGE_DIGEST={DIGEST}" in args
+    assert f"RUST_IMAGE_DIGEST={expected_digest}" in args
 
 
 def test_main_dies_when_digest_omitted_and_ambiguous(
