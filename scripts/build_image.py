@@ -21,6 +21,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--platform", default="", metavar="P")
     parser.add_argument("--tag", default="", metavar="REF")
     parser.add_argument("--source-repo", default="stellar/stellar-cli-docker", metavar="SLUG")
+    parser.add_argument(
+        "--push",
+        action="store_true",
+        help=(
+            "Push the built image to its registry-qualified --tag instead of "
+            "loading it into the local docker (--load). Required for cross-arch "
+            "builds, which cannot be loaded into the host docker."
+        ),
+    )
     return parser
 
 
@@ -53,12 +62,13 @@ def main(argv: list[str] | None = None) -> int:
     common.log(f"  cli-build rust                ({cli_rust_digest})")
     common.log(f"  base rust:{parsed.version}-{parsed.suffix}")
     common.log(f"  platform {args.platform or '<host native>'}")
+    common.log(f"  output   {'push to registry' if args.push else 'load into local docker'}")
 
     cmd = ["docker", "buildx", "build"]
     if args.platform:
         cmd += ["--platform", args.platform]
     cmd += [
-        "--load",
+        "--push" if args.push else "--load",
         "--build-arg",
         f"RUST_VERSION={parsed.version}",
         "--build-arg",
