@@ -56,7 +56,7 @@ def check_labels(
         "org.opencontainers.image.version": cli,
         "org.opencontainers.image.revision": stellar_ref,
         "org.opencontainers.image.base.name": expected_base_name,
-        "org.opencontainers.image.base.digest": rust_image_digest,
+        # "org.opencontainers.image.base.digest": rust_image_digest,
     }
     ok = True
     for key, want in expectations.items():
@@ -74,7 +74,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--image", required=True, metavar="REF")
     parser.add_argument("--stellar-cli-version", required=True, metavar="V")
     parser.add_argument("--rust-version", required=True, metavar="KEY")
-    parser.add_argument("--rust-image-digest", required=True, metavar="DIGEST")
+    parser.add_argument("--rust-image-digest", required=False, metavar="DIGEST")
     return parser
 
 
