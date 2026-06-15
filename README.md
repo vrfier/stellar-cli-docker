@@ -17,6 +17,14 @@ Each image:
 - Ships with the `wasm32v1-none` target preinstalled.
 - Sets `WORKDIR /source` and `ENTRYPOINT ["stellar"]`.
 
+## IMPORTANT
+
+This is a fork of [stellar-cli-docker](https://github.com/stellar/stellar-cli-docker) as I wanted to make build images for a large set of existing deployed contracts. You should consider this a testbed (bleeding edge) and work with the upstream repo for commits.
+
+We have published a large set of images (everything from [builds.json](./builds.json)) to [Docker Hub under `vrfier/stellar-cli`](https://hub.docker.com/repository/docker/vrfier/stellar-cli/general)
+
+Feel free to run those, or add some more images to `builds.json` and run `./scripts/build_all.py` to generate them locally.
+
 ## Quick start
 
 Pull a published image (per-host arch):
