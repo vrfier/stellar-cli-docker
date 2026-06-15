@@ -36,7 +36,7 @@ import resolve_matrix
 import tag_names
 from lib import builds, common
 
-DEFAULT_REGISTRY = "ghcr.io/vrfier/stellar-cli"
+DEFAULT_REGISTRY = "docker.io/vrfier/stellar-cli"
 DEFAULT_SOURCE_REPO = "vrfier/stellar-cli-docker"
 
 
