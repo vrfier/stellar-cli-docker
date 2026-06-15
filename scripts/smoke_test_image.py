@@ -56,8 +56,11 @@ def check_labels(
         "org.opencontainers.image.version": cli,
         "org.opencontainers.image.revision": stellar_ref,
         "org.opencontainers.image.base.name": expected_base_name,
-        # "org.opencontainers.image.base.digest": rust_image_digest,
     }
+    # The pinned base digest is optional: callers that don't pass one (e.g. the
+    # CI smoke step) skip this cross-check rather than fail on a missing value.
+    if rust_image_digest:
+        expectations["org.opencontainers.image.base.digest"] = rust_image_digest
     ok = True
     for key, want in expectations.items():
         got = labels.get(key, "<missing>")
