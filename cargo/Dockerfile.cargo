@@ -9,6 +9,9 @@
 # subcommand — mirroring the stellar path, whose bldimg entrypoint is bare `stellar`
 # and whose bldopt leads with `contract build`. Verifier flow:
 #   docker run -v <src>:/source <bldimg> build --release --target=<t> -p <pkg> --manifest-path <path>
+# Declared before FROM so it is in scope for the pinned base reference; the
+# build stage re-declares it below to use it again in the LABELs.
+ARG RUST_IMAGE_DIGEST
 FROM rust@${RUST_IMAGE_DIGEST}
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 ARG RUST_VERSION
