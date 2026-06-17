@@ -6,7 +6,7 @@
       "description": "A fully-qualified rust base pin: the composite rust base key (rust toolchain version + upstream rust:<v>-<suffix> tail, e.g. 1.94.0-slim-trixie) joined to the pinned multi-arch index digest with '@'. Example: 1.94.0-slim-trixie@sha256:<64 hex>.",
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+-[a-z][a-z0-9-]*@sha256:[0-9a-f]{64}$",
       "type": "string"
-    },
+    }
   },
   "properties": {
     "$comment": {
