@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "definitions": {
+    "rust_pin": {
+      "description": "A fully-qualified rust base pin: the composite rust base key (rust toolchain version + upstream rust:<v>-<suffix> tail, e.g. 1.94.0-slim-trixie) joined to the pinned multi-arch index digest with '@'. Example: 1.94.0-slim-trixie@sha256:<64 hex>.",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+-[a-z][a-z0-9-]*@sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+  },
+  "properties": {
+    "$comment": {
+      "type": "string"
+    },
+    "$schema": {
+      "type": "string"
+    },
+    "default_distro": {
+      "description": "Debian codename used to compose the upstream rust image suffix (slim-<codename>). Drives the picker in scripts/release-prepare.sh and the :<cli> / :latest alias derivation.",
+      "enum": [
+        "bookworm",
+        "trixie"
+      ],
+      "type": "string"
+    },
+    "rust_versions": {
+      "description": "Append-only list of fully-qualified rust base pins (<rust_base_key>@<image_digest>) this stellar-cli release was ever built against. Refreshes append the picker's freshly-resolved pins; previously-published pins are retained so the file stays consistent with the immutable tags in the registry. The same label may appear more than once with distinct digests (e.g. a rebuilt base) \u2014 each pin is its own immutable image.",
+      "items": {
+        "$ref": "#/definitions/rust_pin"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "rust_versions",
+    "default_distro"
+  ],
+  "title": "stellar-cli-docker builds_rust.json",
+  "type": "object"
+}

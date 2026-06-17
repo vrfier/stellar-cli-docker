@@ -1,0 +1,58 @@
+# Dockerfile.cargo — reproducible-build image for wasms built with PLAIN `cargo build`
+# (the ~2,600 on-chain wasms with rsver/rssdkver but NO cliver were built without the
+# stellar cli; the SDK macros still emit contractspecv0/contractenvmetav0 + rsver/
+# rssdkver, but no cliver and no wasm-opt).
+#
+# SEP-0058 use: this image IS the `bldimg`; `bldopt` is the FULL argv appended to the
+# entrypoint (so a verifier just runs `docker run -v src:/source <bldimg> <bldopt>`).
+# The entrypoint is the bare tool `cargo`, so `bldopt` leads with the `build`
+# subcommand — mirroring the stellar path, whose bldimg entrypoint is bare `stellar`
+# and whose bldopt leads with `contract build`. Verifier flow:
+#   docker run -v <src>:/source <bldimg> build --release --target=<t> -p <pkg> --manifest-path <path>
+FROM rust@${RUST_IMAGE_DIGEST}
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+ARG RUST_VERSION
+ARG RUST_BASE_SUFFIX
+ARG RUST_IMAGE_DIGEST
+ARG BUILD_DATE
+ARG SOURCE_REPO
+
+# RUSTUP_TOOLCHAIN is baked in so an in-source `rust-toolchain.toml` in a
+# consumer's contract can't silently swap our pinned toolchain at build
+# time. Required by SEP-58 "self-contained build environment". Consumers can
+# still override with `-e RUSTUP_TOOLCHAIN=...` if they know what they're
+# doing.
+ENV DEBIAN_FRONTEND=noninteractive \
+    RUSTUP_TOOLCHAIN=${RUST_VERSION}
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libdbus-1-3 \
+        libssl3 \
+        libudev1 \
+    && rm -rf /var/lib/apt/lists/*
+RUN rustup target add wasm32-unknown-unknown \
+ && (rustup target add wasm32v1-none || true)
+
+RUN useradd --create-home --home-dir /stellar --uid 1000 --shell /bin/bash stellar \
+    && mkdir -p /source /config /data \
+    && chown stellar:stellar /source /config /data
+
+ENV CARGO_HOME=/stellar/.cargo \
+    HOME=/stellar
+USER stellar
+WORKDIR /source
+
+ENTRYPOINT ["cargo"]
+CMD []
+
+LABEL org.opencontainers.image.title="cargo" \
+      org.opencontainers.image.description="Cargo build image (SEP-58-compatible image for Stellar smart contracts)." \
+      org.opencontainers.image.source="https://github.com/${SOURCE_REPO}" \
+      org.opencontainers.image.url="https://github.com/${SOURCE_REPO}" \
+      org.opencontainers.image.documentation="https://github.com/${SOURCE_REPO}" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.base.name="docker.io/library/rust:${RUST_VERSION}-${RUST_BASE_SUFFIX}" \
+      org.opencontainers.image.base.digest="${RUST_IMAGE_DIGEST}"
