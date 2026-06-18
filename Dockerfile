@@ -41,7 +41,7 @@ RUN apt-get update \
         libudev-dev \
         pkg-config \
     && rm -rf /var/lib/apt/lists/*
-RUN cargo install --locked --root /out \
+RUN cargo install --locked --features opt --root /out \
         --git https://github.com/stellar/stellar-cli.git \
         --rev "${STELLAR_CLI_REV}" \
         stellar-cli
@@ -50,17 +50,26 @@ RUN cargo install --locked --root /out \
 # version the caller declared. Catches accidental ref/version drift in
 # builds.json at build time, not later when an image is already published.
 #
+# Skipped for stellar-cli < 23.0.0: those releases lack `version
+# --only-version` (it returns empty) and don't print the commit rev in a
+# parseable form, so the check can't run against them.
+#
 # Full `stellar version` output is captured first, then parsed in memory.
 # Piping `stellar version | head -n1` closes head's read end after the
 # first line, leaving stellar with a broken pipe on its remaining writes;
 # Rust 1.96+ panics on EPIPE from stdio rather than exiting quietly, and
 # pipefail propagates that as a build failure even though the values matched.
-RUN installed_version="$(/out/bin/stellar version --only-version)" \
-     && stellar_version_output="$(/out/bin/stellar version)" \
-     && installed_rev="$(printf '%s\n' "$stellar_version_output" | grep -oE '[0-9a-f]{40}' | head -n1)" \
-     && test "$installed_version" = "${STELLAR_CLI_VERSION}" \
-     && test "$installed_rev" = "${STELLAR_CLI_REV}" \
-     || { echo "stellar-cli mismatch: binary reports version='$installed_version' rev='$installed_rev', expected version='${STELLAR_CLI_VERSION}' rev='${STELLAR_CLI_REV}'" >&2; exit 1; }
+RUN major="${STELLAR_CLI_VERSION%%.*}" \
+     && if [ "${major:-0}" -lt 23 ]; then \
+            echo "skipping stellar-cli version check for ${STELLAR_CLI_VERSION} (< 23.0.0)" >&2; \
+        else \
+            installed_version="$(/out/bin/stellar version --only-version)" \
+             && stellar_version_output="$(/out/bin/stellar version)" \
+             && installed_rev="$(printf '%s\n' "$stellar_version_output" | grep -oE '[0-9a-f]{40}' | head -n1)" \
+             && test "$installed_version" = "${STELLAR_CLI_VERSION}" \
+             && test "$installed_rev" = "${STELLAR_CLI_REV}" \
+             || { echo "stellar-cli mismatch: binary reports version='$installed_version' rev='$installed_rev', expected version='${STELLAR_CLI_VERSION}' rev='${STELLAR_CLI_REV}'" >&2; exit 1; }; \
+        fi
 
 FROM rust@${RUST_IMAGE_DIGEST}
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
