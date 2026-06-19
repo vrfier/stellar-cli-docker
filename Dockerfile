@@ -96,7 +96,8 @@ RUN apt-get update \
         libssl3 \
         libudev1 \
     && rm -rf /var/lib/apt/lists/*
-RUN rustup target add wasm32v1-none
+RUN rustup target add wasm32-unknown-unknown \
+ && (rustup target add wasm32v1-none || true)
 
 RUN useradd --create-home --home-dir /stellar --uid 1000 --shell /bin/bash stellar \
     && mkdir -p /source /config /data \
